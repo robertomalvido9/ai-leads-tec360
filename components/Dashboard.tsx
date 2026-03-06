@@ -477,7 +477,10 @@ export default function Dashboard() {
     try {
       const res = await fetch(`/api/leads?batch=${scanBatch}`)
       setScanMsg('Calificando prospectos con Claude IA…')
-      if (!res.ok) throw new Error(`Error ${res.status}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? `Error ${res.status}`)
+      }
       const data: { leads: Lead[]; scrapedAt: string; batch: number } = await res.json()
       if (data.leads?.length) {
         setAllLeads(prev => {
