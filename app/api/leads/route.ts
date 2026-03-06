@@ -3,8 +3,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import { FirecrawlClient } from '@mendable/firecrawl-js'
 import { Lead } from '@/lib/data'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 // 12 diverse queries targeting Mexico City companies across multiple sectors
 const ALL_QUERIES = [
   'empresas fintech Ciudad de México transformación digital autenticación IAM 2025',
@@ -25,6 +23,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const batch = parseInt(url.searchParams.get('batch') ?? '0')
 
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const firecrawl = new FirecrawlClient({ apiKey: process.env.FIRECRAWL_API_KEY! })
 
   try {

@@ -490,8 +490,8 @@ export default function Dashboard() {
       } else {
         setScanMsg('No se encontraron leads nuevos. Intenta de nuevo.')
       }
-    } catch {
-      setScanMsg('Error al escanear. Verifica las API keys en .env.local')
+    } catch (err) {
+      setScanMsg(`Error al escanear: ${err instanceof Error ? err.message : 'Error desconocido'}`)
     } finally {
       setScanning(false)
       setTimeout(() => setScanMsg(''), 6000)
