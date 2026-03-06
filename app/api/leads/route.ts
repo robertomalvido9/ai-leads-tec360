@@ -42,19 +42,23 @@ export async function GET(request: Request) {
     for (const query of queries) {
       try {
         const result = await firecrawl.search(query, { limit: 5 })
-        const webResults = result.web ?? []
-        for (const item of webResults) {
-          const i = item as Record<string, unknown>
+        // Firecrawl SDK v4+ returns results in result.data; older versions used result.web
+        const webResults: Record<string, unknown>[] =
+          ((result as Record<string, unknown>).data as Record<string, unknown>[]) ??
+          ((result as Record<string, unknown>).web as Record<string, unknown>[]) ??
+          []
+        for (const i of webResults) {
           const snippet = `Fuente: ${String(i.url ?? '')}\nTítulo: ${String(i.title ?? '')}\nContenido: ${String(i.markdown ?? i.description ?? '').slice(0, 700)}`
           allSnippets.push(snippet)
         }
-      } catch {
+      } catch (e) {
+        console.error('Firecrawl query error:', e)
         // continue with other queries if one fails
       }
     }
 
     if (allSnippets.length === 0) {
-      return NextResponse.json({ error: 'No data returned from Firecrawl' }, { status: 502 })
+      return NextResponse.json({ error: 'Firecrawl returned no results. Check FIRECRAWL_API_KEY and quota.' }, { status: 502 })
     }
 
     const systemPrompt = `Eres un analista de inteligencia de ventas B2B para TEC360Cloud (tec360cloud.com), empresa de ciberseguridad e Identidad y Gestión de Acceso (IAM/CIAM) con sede en México sirviendo a LATAM.
