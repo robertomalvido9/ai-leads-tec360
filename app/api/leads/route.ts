@@ -120,14 +120,31 @@ Reglas:
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
+      max_tokens: 16000,
       messages: [{ role: 'user', content: userPrompt }],
       system: systemPrompt,
     })
 
     const raw = (message.content[0] as { type: string; text: string }).text.trim()
     const jsonText = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
-    const parsed: Omit<Lead, 'id' | 'scrapedAt'>[] = JSON.parse(jsonText)
+
+    let parsed: Omit<Lead, 'id' | 'scrapedAt'>[]
+    try {
+      parsed = JSON.parse(jsonText)
+    } catch {
+      // JSON truncated: extract all complete objects from the array
+      const matches = jsonText.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g) ?? []
+      const complete: Omit<Lead, 'id' | 'scrapedAt'>[] = []
+      for (const obj of matches) {
+        try {
+          complete.push(JSON.parse(obj))
+        } catch {
+          // skip malformed object
+        }
+      }
+      if (complete.length === 0) throw new Error('No se pudo parsear la respuesta JSON de Claude')
+      parsed = complete
+    }
 
     const scrapedAt = new Date().toISOString().slice(0, 10)
     const leads: Lead[] = parsed.map((l, i) => ({
